@@ -1,0 +1,8 @@
+#!/bin/bash
+
+source_up
+
+export BUCKET_NAME="yingnote-db"
+export REDIS_HOST="localhost"
+export REDIS_PASSWORD=""
+
