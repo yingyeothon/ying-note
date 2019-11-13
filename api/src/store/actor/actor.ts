@@ -48,14 +48,14 @@ class NoteProcessor {
     await getRepository().set(this.noteId, this.note);
   };
 
-  public onMessage = ({ message }: { message: Modification }) => {
+  public onMessage = async ({ message }: { message: Modification }) => {
     switch (message.type) {
-      case "new":
+      case "upsertNote":
         this.note = {
           noteId: this.noteId,
           content: message.content,
           writeDate: DateTime.local().toISO(),
-          comments: []
+          comments: this.note.comments || []
         };
         break;
       case "addComment":

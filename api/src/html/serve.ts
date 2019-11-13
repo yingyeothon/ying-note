@@ -31,6 +31,9 @@ const translateToBundlePath = (requestUrl: string) => {
   while (maybe.startsWith("/")) {
     maybe = maybe.substr(1);
   }
+  if (/^note\/.+$/.test(maybe)) {
+    return "index.html";
+  }
   return maybe || "index.html";
 };
 

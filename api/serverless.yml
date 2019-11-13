@@ -28,6 +28,7 @@ provider:
       Action:
         - "s3:GetObject"
         - "s3:PutObject"
+        - "s3:DeleteObject"
       Resource:
         - "arn:aws:s3:::${env:BUCKET_NAME}/*"
     - Effect: "Allow"
@@ -67,14 +68,14 @@ package:
   individually: true
 
 functions:
-  get:
+  getNote:
     handler: src/store/note/get.handle
     timeout: 30
     memorySize: 1024
     events:
       - http:
           method: get
-          path: /{noteId}
+          path: /api/{noteId}
           cors: true
   putNote:
     handler: src/store/note/put.handle
@@ -83,7 +84,16 @@ functions:
     events:
       - http:
           method: put
-          path: /{noteId}
+          path: /api/{noteId}
+          cors: true
+  deleteNote:
+    handler: src/store/note/delete.handle
+    timeout: 30
+    memorySize: 1024
+    events:
+      - http:
+          method: delete
+          path: /api/{noteId}
           cors: true
   putComment:
     handler: src/store/comment/put.handle
@@ -92,7 +102,7 @@ functions:
     events:
       - http:
           method: put
-          path: /{noteId}/comment
+          path: /api/{noteId}/comment
           cors: true
   deleteComment:
     handler: src/store/comment/delete.handle
@@ -101,7 +111,7 @@ functions:
     events:
       - http:
           method: delete
-          path: /{noteId}/comment/{commentId}
+          path: /api/{noteId}/comment/{commentId}
           cors: true
   bottomHalf:
     handler: src/store/actor/actor.bottomHalf
@@ -117,9 +127,7 @@ functions:
       - http: GET /static/css/{file}
       - http: GET /static/js/{file}
       - http: GET /static/media/{file}
-    package:
-      include:
-        - html-bundle.zip
+      - http: GET /note/{file}
 
 resources:
   Resources:

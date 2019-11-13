@@ -1,5 +1,5 @@
-export interface INewNote {
-  type: "new";
+export interface IUpsertNote {
+  type: "upsertNote";
   noteId: string;
   content: string;
 }
@@ -16,4 +16,4 @@ export interface IDeleteComment {
   commentId: string;
 }
 
-export type Modification = INewNote | IAddComment | IDeleteComment;
+export type Modification = IUpsertNote | IAddComment | IDeleteComment;
