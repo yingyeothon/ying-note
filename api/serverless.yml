@@ -70,8 +70,8 @@ package:
 functions:
   getNote:
     handler: src/store/note/get.handle
-    timeout: 30
-    memorySize: 1024
+    timeout: 6
+    memorySize: 256
     events:
       - http:
           method: get
@@ -79,8 +79,8 @@ functions:
           cors: true
   putNote:
     handler: src/store/note/put.handle
-    timeout: 30
-    memorySize: 1024
+    timeout: 6
+    memorySize: 256
     events:
       - http:
           method: put
@@ -88,8 +88,8 @@ functions:
           cors: true
   deleteNote:
     handler: src/store/note/delete.handle
-    timeout: 30
-    memorySize: 1024
+    timeout: 6
+    memorySize: 256
     events:
       - http:
           method: delete
@@ -97,8 +97,8 @@ functions:
           cors: true
   putComment:
     handler: src/store/comment/put.handle
-    timeout: 30
-    memorySize: 1024
+    timeout: 6
+    memorySize: 256
     events:
       - http:
           method: put
@@ -106,8 +106,8 @@ functions:
           cors: true
   deleteComment:
     handler: src/store/comment/delete.handle
-    timeout: 30
-    memorySize: 1024
+    timeout: 6
+    memorySize: 256
     events:
       - http:
           method: delete
@@ -115,12 +115,12 @@ functions:
           cors: true
   bottomHalf:
     handler: src/store/actor/actor.bottomHalf
-    timeout: 900
-    memorySize: 1024
+    timeout: 36
+    memorySize: 256
   serve:
     handler: src/html/serve.handle
-    timeout: 6
-    memorySize: 256
+    timeout: 10
+    memorySize: 512
     events:
       - http: GET /
       - http: GET /{file}

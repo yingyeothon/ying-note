@@ -1,9 +1,11 @@
-import { ActorSystem } from "@yingyeothon/actor-system";
+import * as Actor from "@yingyeothon/actor-system";
+import { IActorSubsystem } from "@yingyeothon/actor-system";
 import {
   handleActorLambdaEvent,
   shiftToNextLambda
 } from "@yingyeothon/actor-system-aws-lambda-support";
-import { RedisLock, RedisQueue } from "@yingyeothon/actor-system-redis-support";
+import { newRedisSubsystem } from "@yingyeothon/actor-system-redis-support";
+import { ConsoleLogger } from "@yingyeothon/logger";
 import IORedis from "ioredis";
 import { DateTime } from "luxon";
 import mem from "mem";
@@ -26,33 +28,36 @@ const emptyNote = (noteId: string): INote => ({
   writeDate: ""
 });
 
-export const getActorSystem = mem(
-  () =>
-    new ActorSystem({
-      queue: new RedisQueue({ redis: getRedis() }),
-      lock: new RedisLock({ redis: getRedis() })
-    })
-);
+const subsys: IActorSubsystem = {
+  ...newRedisSubsystem({
+    redis: getRedis(),
+    keyPrefix: `yingnote`,
+    logger: new ConsoleLogger(`debug`)
+  }),
+  shift: shiftToNextLambda({
+    functionName: process.env.BOTTOM_HALF_LAMBDA_NAME!
+  })
+};
 
-class NoteProcessor {
+class NoteActor {
   private note: INote | null = null;
 
-  constructor(private readonly noteId: string) {}
+  constructor(public readonly id: string) {}
 
-  public onBeforeAct = async () => {
+  public onPrepare = async () => {
     this.note =
-      (await getRepository().get<INote>(this.noteId)) || emptyNote(this.noteId);
+      (await getRepository().get<INote>(this.id)) || emptyNote(this.id);
   };
 
-  public onAfterAct = async () => {
-    await getRepository().set(this.noteId, this.note);
+  public onCommit = async () => {
+    await getRepository().set(this.id, this.note);
   };
 
-  public onMessage = async ({ message }: { message: Modification }) => {
+  public onMessage = async (message: Modification) => {
     switch (message.type) {
       case "upsertNote":
         this.note = {
-          noteId: this.noteId,
+          noteId: this.id,
           content: message.content,
           writeDate: DateTime.local().toISO(),
           comments: this.note.comments || []
@@ -75,32 +80,33 @@ class NoteProcessor {
   };
 }
 
-const getActor = mem((noteId: string) => {
-  const processor = new NoteProcessor(noteId);
-  return getActorSystem().spawn<Modification>(noteId, actor =>
-    actor
-      .on("beforeAct", processor.onBeforeAct)
-      .on("afterAct", processor.onAfterAct)
-      .on("act", processor.onMessage)
-      .on("error", error => console.error(`ActorError`, noteId, error))
-      .on(
-        "shift",
-        shiftToNextLambda({
-          functionName: process.env.BOTTOM_HALF_LAMBDA_NAME!
-        })
-      )
-  );
-});
+const newActor = (noteId: string) =>
+  Actor.newEnv(subsys)(new NoteActor(noteId));
 
-const topHalfTimeout = 24 * 1000;
-const bottomHalfTimeout = 890 * 1000;
+const topHalfTimeout = 3 * 1000;
+const bottomHalfTimeout = 30 * 1000;
 
 export const postModification = (noteId: string, modification: Modification) =>
-  getActor(noteId).send(modification, {
-    shiftTimeout: topHalfTimeout
-  });
+  Actor.send(
+    newActor(noteId),
+    {
+      item: modification,
+      awaitPolicy: Actor.AwaitPolicy.Commit,
+      awaitTimeoutMillis: topHalfTimeout
+    },
+    {
+      aliveMillis: topHalfTimeout,
+      oneShot: true,
+      shiftable: true
+    }
+  );
 
 export const bottomHalf = handleActorLambdaEvent({
-  spawn: ({ actorName }) => getActor(actorName),
-  functionTimeout: bottomHalfTimeout
+  newActorEnv: ({ actorId }) => newActor(actorId),
+  processOptions: {
+    aliveMillis: bottomHalfTimeout,
+    oneShot: false,
+    shiftable: true
+  },
+  logger: new ConsoleLogger(`debug`)
 });

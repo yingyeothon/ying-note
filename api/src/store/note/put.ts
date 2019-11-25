@@ -1,6 +1,8 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
 import { postModification } from "../actor/actor";
 import { withCors } from "../cors";
+import { INote } from "../model";
+import { getRepository } from "../repository";
 
 export const handle: APIGatewayProxyHandler = withCors(async event => {
   const { noteId } = event.pathParameters;
@@ -14,7 +16,9 @@ export const handle: APIGatewayProxyHandler = withCors(async event => {
       noteId,
       content: event.body
     });
-    return { statusCode: 200, body: "OK" };
+
+    const note = await getRepository().get<INote>(noteId);
+    return { statusCode: 200, body: JSON.stringify(note) };
   } catch (error) {
     console.error(`Cannot add a note`, error);
     return { statusCode: 500, body: "Internal Server Error" };
