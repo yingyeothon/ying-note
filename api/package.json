@@ -16,7 +16,7 @@
     "@yingyeothon/repository-s3": "^0.2.1",
     "adm-zip": "^0.4.13",
     "ioredis": "^4.14.1",
-    "luxon": "^1.21.2",
+    "luxon": "^1.28.1",
     "mem": "^6.0.0",
     "mime-types": "^2.1.24",
     "original-fs": "^1.1.0",
