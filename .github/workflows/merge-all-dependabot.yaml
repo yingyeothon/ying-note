@@ -1,0 +1,16 @@
+name: merge-all-dependabot
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge all Dependabot PRs
+        run: gh pr list --label "dependencies" --json number -q '.[].number' | xargs gh pr merge --auto --merge --squash
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
