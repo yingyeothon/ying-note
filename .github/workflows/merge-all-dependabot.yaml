@@ -12,6 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Merge all Dependabot PRs
-        run: gh pr list --label "dependencies" --json number -q '.[].number' | xargs gh pr merge --auto --merge --squash
+        run: gh pr list --label "dependencies" --json number -q '.[].number' | xargs -n1 gh pr merge --auto --merge --squash
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
